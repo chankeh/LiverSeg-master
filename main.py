@@ -13,29 +13,23 @@ images_list,labels_list,val_images_list,val_label_list = split_dataset()
 
 def compose_data():
     # 定义Transform
-    composed_trn = transforms.Compose([ResizeShorterScale(shorter_side, low_scale, high_scale),
-                                       Pad(crop_size, [123.675, 116.28, 103.53], ignore_label),
-                                       RandomMirror(),
-                                       RandomCrop(crop_size),
-                                       Normalise(*normalise_params),
-                                       ToTensor()])
-    composed_val = transforms.Compose([Normalise(*normalise_params),
-                                       ToTensor()])
+    composed_trn = transforms.Compose([transforms.Resize(128),transforms.ToTensor(),transforms.Normalize(0.5,0.5,0.5)])
+    composed_val = transforms.Compose([transforms.Normalise(0.5,0.5,0.5),transforms.ToTensor()])
     return composed_trn,composed_val
 
-def train_prapre():
-    trainset = MyDataset(data_file=train_list,
-                         data_dir=train_dir,
+def train_prapre(composed_trn,composed_val):
+    trainset = MyDataset(data_file='./liver/train/data_train/',
+                         data_dir='./liver/train/',
                          transform_trn=composed_trn,
                          transform_val=composed_val)
-    valset = MyDataset(data_file=val_list,
-                       data_dir=val_dir,
+    valset = MyDataset(data_file='./liver/val/data_val',
+                       data_dir='./liver/val/',
                        transform_trn=None,
                        transform_val=composed_val)
     return trainset,valset
 # 导入数据集
 
-def data_loader():
+def data_loader(trainset,valset,batch_size,num_workers):
     # 构建生成器
     train_loader = DataLoader(trainset,
                               batch_size=batch_size,
@@ -53,6 +47,6 @@ def data_loader():
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
+    pass
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
