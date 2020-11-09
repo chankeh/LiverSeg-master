@@ -11,22 +11,23 @@ import torch
 # Press ⌃R to execute it or replace it with your code.
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 
-images_list,imamge_labels_list,val_images_list,val_label_list = split_dataset()
+images_list,image_labels_list,val_images_list,val_label_list = split_dataset()
 
 
 def compose_data():
     # 定义Transform
     composed_trn = transforms.Compose([transforms.Resize(128),transforms.ToTensor(),transforms.Normalize(0.5,0.5,0.5)])
-    composed_val = transforms.Compose([transforms.Normalise(0.5,0.5,0.5),transforms.ToTensor()])
+    composed_val = transforms.Compose([transforms.Normalize(0.5,0.5,0.5),transforms.ToTensor()])
     return composed_trn,composed_val
 
+#                 composed_trn, composed_val,images_list,labels_list,val_images_list,val_label_list
 def train_prapre(composed_trn,composed_val,images_list,imamge_labels_list,val_images_list,val_label_list):
     trainset = MyDataset(data_file=images_list,
-                         data_dir='./liver/train/data_train/',
+                         data_dir=image_labels_list,
                          transform_trn=composed_trn,
                          transform_val=composed_val)
     valset = MyDataset(data_file=val_images_list,
-                       data_dir='./liver/val/data_val/',
+                       data_dir=val_label_list,
                        transform_trn=None,
                        transform_val=composed_val)
 
@@ -79,82 +80,8 @@ def train_net(model,
               weight,
               checkpoint_dir='./weights',
               lr=1e-4):
+    pass
 
-
-
-
-
-
-
-
-    # Model on cuda
-    # if torch.cuda.is_available():
-    #     model = model.cuda()
-
-    # data_transform = transforms.RandomHorizontalFlip()
-
-    train_dataset = NrrdReader3D(train_data_path, train_label_path)
-    val_dataset = NrrdReader3D(val_data_path, val_label_path)
-
-    label_dataset = NrrdReader3D(train_label_path)
-
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
-
-    label_dataloader = DataLoader(train_label_path,batch_size=batch_size, shuffle=True)
-
-    print('''
-    Starting training:
-        Epochs: {}
-        Batch size: {}
-        Learning rate: {}
-        Training size: {}
-        Validation size: {}
-    '''.format(n_epochs, batch_size, lr, train_dataset.__len__(),
-               val_dataset.__len__()))
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=0.0005)
-    # criterion = nn.NLLLoss(weight=weight)
-    criterion = SoftDiceLoss(n_classes=3)
-
-    losses = []
-    val_losses = []
-    for epoch in range(n_epochs):
-        losses_avg = train_epoch(model,
-                                  label_dataloader,
-                                 optimizer,
-                                 criterion,
-                                 epoch,
-                                 n_epochs,
-                                 print_freq=100)
-
-        val_losses_avg = val_epoch(model,
-                                   val_dataloader,
-                                   criterion,
-                                   print_freq=10)
-
-        losses.append(round(losses_avg.cpu().numpy().tolist(), 4))
-        val_losses.append(round(val_losses_avg.cpu().numpy().tolist(), 4))
-
-        # save model parameters
-        parameters_name = str(epoch) + '.pkl'
-        torch.save(model.state_dict(), os.path.join(checkpoint_dir, parameters_name))
-
-    # save loss figure
-    draw_loss(n_epochs, losses, val_losses)
-
-    # save loss data
-    with open('loss/loss.txt', 'w') as loss_file:
-        loss_file.write('train loss:\n')
-        for i, loss in enumerate(losses):
-            output = '{' + str(i) + '}: {' + str(loss) + '}\n'
-            loss_file.write(output)
-        loss_file.write('-' * 50)
-        loss_file.write('\n')
-        loss_file.write('validation loss:\n')
-        for i, val_loss in enumerate(val_losses):
-            output = '{' + str(i) + '}: {' + str(val_loss) + '}\n'
-            loss_file.write(output)
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -163,17 +90,47 @@ if __name__ == '__main__':
     # 2.定义Transform
     composed_trn, composed_val = compose_data()
     # 3.准备训练所需数据
-    trainset,valset = train_prapre(composed_trn, composed_val)
+    trainset,valset,train_labelset,val_labelset = train_prapre(composed_trn, composed_val,images_list,labels_list,val_images_list,val_label_list)
     # 4.构建生成器
-    train_loader,val_loader = data_loader(trainset,valset,4,2)
+    train_loader,val_loader,train_label_loader,val_label_loader = data_loader(trainset,valset,train_labelset,val_labelset,4,2)
     # 5.train
-    for i, sample in enumerate(train_loader):
-        image = sample['image'].cuda()
-        target = sample['mask'].cuda()
-        image_var = torch.autograd.Variable(image).float()
-        target_var = torch.autograd.Variable(target).long()
-        # Compute output
-        net = AttentionUNet2D(n_channels=1, n_classes=2)
+    model = AttentionUNet2D(n_channels=1, n_classes=3)
+    for i in range(20):
+        train_loss = 0.
+        train_acc = 0.
+        for i, sample in enumerate(train_loader):
+            image = sample['image']
+            target = sample['mask']
+            image_var = torch.autograd.Variable(image).float()
+            target_var = torch.autograd.Variable(target).long()
+
+            optimizer = torch.optim.Adam(model.parameters())
+            loss_func = torch.nn.CrossEntropyLoss()
+
+            out = model(image_var)
+            loss = loss_func(out, target_var)
+
+            train_loss += loss.data[0]
+            pred = torch.max(out, 1)[1]
+            train_correct = (pred == target_var).sum()
+            train_acc += train_correct.data[0]
+
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+
+            print('Train Loss: {:.6f}, Acc: {:.6f}'.format(train_loss / (len(
+                images_list)), train_acc / (len(labels_list))))
+
+
+
+
+
+
+
+
 
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

@@ -16,9 +16,11 @@ class MyDataset(Dataset):
             transform_{trn, val} (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        with open(data_file, 'rb') as f:
-            datalist = f.readlines()
-        self.datalist = [(k, v) for k, v in map(lambda x: x.decode('utf-8').strip('\n').split('\t'), datalist)]
+        # data_file = [data_dir+x for x in data_file]
+        # with open(data_file, 'rb') as f:
+        #     datalist = f.readlines()
+        # self.datalist = [(k, v) for k, v in map(lambda x: x.decode('utf-8').strip('\n').split('\t'), datalist)]
+        self.datalist = data_file
         self.root_dir = data_dir
         self.transform_trn = transform_trn
         self.transform_val = transform_val
@@ -31,8 +33,8 @@ class MyDataset(Dataset):
         return len(self.datalist)
 
     def __getitem__(self, idx):
-        img_name = os.path.join(self.root_dir, self.datalist[idx][0])
-        msk_name = os.path.join(self.root_dir, self.datalist[idx][1])
+        img_name = self.datalist[idx]
+        msk_name = self.root_dir[idx]
 
         def read_image(x):
             img_arr = np.array(Image.open(x))
@@ -42,13 +44,13 @@ class MyDataset(Dataset):
 
         image = read_image(img_name)
         mask = np.array(Image.open(msk_name))
-        if img_name != msk_name:
-            assert len(mask.shape) == 2, 'Masks must be encoded without colourmap'
+        # if img_name != msk_name:
+        #     assert len(mask.shape) == 2, 'Masks must be encoded without colourmap'
         sample = {'image': image, 'mask': mask}
-        if self.stage == 'train':
-            if self.transform_trn:
-                sample = self.transform_trn(sample)
-        elif self.stage == 'val':
-            if self.transform_val:
-                sample = self.transform_val(sample)
+        # if self.stage == 'train':
+        #     if self.transform_trn:
+        #         sample = self.transform_trn(sample)
+        # elif self.stage == 'val':
+        #     if self.transform_val:
+        #         sample = self.transform_val(sample)
         return sample
