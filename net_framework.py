@@ -320,7 +320,7 @@ class unetCat(nn.Module):
 
 
 class AttentionUNet2D(nn.Module):
-    def __init__(self, n_channels, n_classes, useBN=True, pretrained=False):
+    def __init__(self, n_channels, n_classes, useBN=True, pretrained=False): # channel:1  classes:3
         super(AttentionUNet2D, self).__init__()
         self.n_classes = n_classes
         self.conv1 = self.add_conv_stage(n_channels, 16, useBN=useBN)
@@ -346,7 +346,7 @@ class AttentionUNet2D(nn.Module):
         self.conv1m = self.add_conv_stage(32, 16, useBN=useBN)
 
         self.final_conv = nn.Sequential(
-            nn.Conv2d(16, n_classes, 3, 1, 1), )  # n_classes
+            nn.Conv2d(16, n_classes, 1, 1, 1), )  # n_classes
         self.max_pool = nn.MaxPool2d(2)
         self.max_pool1 = nn.MaxPool2d(1)
 
@@ -435,26 +435,26 @@ class AttentionUNet2D(nn.Module):
 
     def forward(self, x):
         # from IPython import embed;embed()
-        conv1_out = self.conv1(x)  # (304,304,16)
-        conv2_out = self.conv2(self.max_pool(conv1_out))  # (152,152,32)
-        conv3_out = self.conv3(self.max_pool(conv2_out))  # (76,76,64)
-        conv4_out = self.conv4(self.max_pool(conv3_out))  # (38,38,128)
+        conv1_out = self.conv1(x)  # (304,304,16) (512,512,16)
+        conv2_out = self.conv2(self.max_pool(conv1_out))  # (152,152,32)  (256,256,32)
+        conv3_out = self.conv3(self.max_pool(conv2_out))  # (76,76,64)  (128,128,32)
+        conv4_out = self.conv4(self.max_pool(conv3_out))  # (38,38,128)  (64,64,64)
 
-        center_out = self.center(self.max_pool(conv4_out))  # (19,19,256)
-        gating_out = self.gating(center_out)  # (19,19,128)
+        center_out = self.center(self.max_pool(conv4_out))  # (19,19,256)  (32,32,256)
+        gating_out = self.gating(center_out)  # (19,19,128)   (32,32,128)
 
-        attn_1_out = self.attn_1(conv4_out, gating_out)  # (38,38,128)
-        attn_2_out = self.attn_2(conv3_out, gating_out)  # (76,76,64)
-        attn_3_out = self.attn_3(conv2_out, gating_out)  # (152,152,32)
+        attn_1_out = self.attn_1(conv4_out, gating_out)  # (38,38,128)  (64,64,128)
+        attn_2_out = self.attn_2(conv3_out, gating_out)  # (76,76,64)   (128,128,64)
+        attn_3_out = self.attn_3(conv2_out, gating_out)  # (152,152,32)  (256,256,32)
 
-        cat_1_out = self.cat_1(attn_1_out, center_out)  # (38,38,256)
-        conv4m_out = self.conv4m(cat_1_out)  # (38,38,128)
-        cat_2_out = self.cat_2(attn_2_out, conv4m_out)  # (76,76,128)
-        conv3m_out = self.conv3m(cat_2_out)  # (76,76,64)
-        cat_3_out = self.cat_3(attn_3_out, conv3m_out)  # (152,152,64)
-        conv2m_out = self.conv2m(cat_3_out)  # (152,152,32)
-        cat_4_out = self.cat_4(conv1_out, conv2m_out)  # (304,304,32)
-        conv1m_out = self.conv1m(cat_4_out)  # (304,304,16)
+        cat_1_out = self.cat_1(attn_1_out, center_out)  # (38,38,256)  (64,64,128)
+        conv4m_out = self.conv4m(cat_1_out)  # (38,38,128)   (64,64,64)
+        cat_2_out = self.cat_2(attn_2_out, conv4m_out)  # (76,76,128)  (128,128,128)
+        conv3m_out = self.conv3m(cat_2_out)  # (76,76,64)  (128,128,64)
+        cat_3_out = self.cat_3(attn_3_out, conv3m_out)  # (152,152,64)  (256,256,64)
+        conv2m_out = self.conv2m(cat_3_out)  # (152,152,32)  (128,128,32)
+        cat_4_out = self.cat_4(conv1_out, conv2m_out)  # (304,304,32)  (256,256,32)
+        conv1m_out = self.conv1m(cat_4_out)  # (304,304,16)  (256,256,16)
 
         conv0_out = self.final_conv(conv1m_out)
         out = self.softmax(conv0_out)

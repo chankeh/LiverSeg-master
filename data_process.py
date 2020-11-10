@@ -55,9 +55,9 @@ def split_dataset():
 
 
 def read_image(path):
-    img = np.array(Image.open(path))
-    if img.ndim == 2:
-        img = cv.merge([img, img, img])
+    img = np.array(Image.open(path).convert('L'), 'f')
+    # if img.ndim == 2:
+    #     img = cv.merge([img, img, img])
     return img
 
 

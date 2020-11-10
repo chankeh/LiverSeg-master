@@ -21,7 +21,7 @@ class MyDataset(Dataset):
         #     datalist = f.readlines()
         # self.datalist = [(k, v) for k, v in map(lambda x: x.decode('utf-8').strip('\n').split('\t'), datalist)]
         self.datalist = data_file
-        self.root_dir = data_dir
+        self.root_dir = data_dir # mask
         self.transform_trn = transform_trn
         self.transform_val = transform_val
         self.stage = 'train'
@@ -37,9 +37,10 @@ class MyDataset(Dataset):
         msk_name = self.root_dir[idx]
 
         def read_image(x):
-            img_arr = np.array(Image.open(x))
-            if len(img_arr.shape) == 2:  # grayscale
-                img_arr = np.tile(img_arr, [3, 1, 1]).transpose(1, 2, 0)
+            img_arr = np.array(Image.open(x).convert('L'), 'f')
+            # if len(img_arr.shape) == 2:  # grayscale
+            #     img_arr = np.tile(img_arr, [3, 1, 1]).transpose(1, 2, 0)
+            # img_arr = img_arr
             return img_arr
 
         image = read_image(img_name)
@@ -47,10 +48,4 @@ class MyDataset(Dataset):
         # if img_name != msk_name:
         #     assert len(mask.shape) == 2, 'Masks must be encoded without colourmap'
         sample = {'image': image, 'mask': mask}
-        # if self.stage == 'train':
-        #     if self.transform_trn:
-        #         sample = self.transform_trn(sample)
-        # elif self.stage == 'val':
-        #     if self.transform_val:
-        #         sample = self.transform_val(sample)
         return sample

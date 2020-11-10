@@ -16,8 +16,8 @@ images_list,image_labels_list,val_images_list,val_label_list = split_dataset()
 
 def compose_data():
     # 定义Transform
-    composed_trn = transforms.Compose([transforms.Resize(128),transforms.ToTensor(),transforms.Normalize(0.5,0.5,0.5)])
-    composed_val = transforms.Compose([transforms.Normalize(0.5,0.5,0.5),transforms.ToTensor()])
+    composed_trn = transforms.Compose([transforms.Grayscale(num_output_channels=1),transforms.ToTensor(),transforms.Normalize(0.5,0.5,0.5)])
+    composed_val = transforms.Compose([transforms.Grayscale(num_output_channels=1),transforms.Normalize(0.5,0.5,0.5),transforms.ToTensor()])
     return composed_trn,composed_val
 
 #                 composed_trn, composed_val,images_list,labels_list,val_images_list,val_label_list
