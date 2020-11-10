@@ -346,7 +346,7 @@ class AttentionUNet2D(nn.Module):
         self.conv1m = self.add_conv_stage(32, 16, useBN=useBN)
 
         self.final_conv = nn.Sequential(
-            nn.Conv2d(16, n_classes, 1, 1, 1), )  # n_classes
+            nn.Conv2d(16, n_classes, 1, 1, 1), )  # n_classes 3
         self.max_pool = nn.MaxPool2d(2)
         self.max_pool1 = nn.MaxPool2d(1)
 

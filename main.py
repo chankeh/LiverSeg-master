@@ -94,13 +94,13 @@ if __name__ == '__main__':
     # 4.构建生成器
     train_loader,val_loader,train_label_loader,val_label_loader = data_loader(trainset,valset,train_labelset,val_labelset,4,2)
     # 5.train
-    model = AttentionUNet2D(n_channels=1, n_classes=3)
+    model = AttentionUNet2D(n_channels=1, n_classes=512)
     for i in range(20):
         train_loss = 0.
         train_acc = 0.
         for i, sample in enumerate(train_loader):
-            image = sample['image']
-            target = sample['mask']
+            image = sample['image'][0]
+            target = sample['mask'][0]
             image_var = torch.autograd.Variable(image).float()
             target_var = torch.autograd.Variable(target).long()
 
