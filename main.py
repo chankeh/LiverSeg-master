@@ -16,8 +16,8 @@ images_list,image_labels_list,val_images_list,val_label_list = split_dataset()
 
 def compose_data():
     # 定义Transform
-    composed_trn = transforms.Compose([transforms.Grayscale(num_output_channels=1),transforms.ToTensor(),transforms.Normalize(0.5,0.5,0.5)])
-    composed_val = transforms.Compose([transforms.Grayscale(num_output_channels=1),transforms.Normalize(0.5,0.5,0.5),transforms.ToTensor()])
+    composed_trn = transforms.Compose([transforms.Grayscale(num_output_channels=1),transforms.Compose(transforms.Resize(1024)),transforms.ToTensor(),transforms.Normalize(0.5,0.5,0.5)])
+    composed_val = transforms.Compose([transforms.Grayscale(num_output_channels=1),transforms.Compose(transforms.Resize(1024)),transforms.Normalize(0.5,0.5,0.5),transforms.ToTensor()])
     return composed_trn,composed_val
 
 #                 composed_trn, composed_val,images_list,labels_list,val_images_list,val_label_list
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     # 4.构建生成器
     train_loader,val_loader,train_label_loader,val_label_loader = data_loader(trainset,valset,train_labelset,val_labelset,4,2)
     # 5.train
-    model = AttentionUNet2D(n_channels=1, n_classes=512)
+    model = AttentionUNet2D(n_channels=1, n_classes=1)# TODO
     for i in range(20):
         train_loss = 0.
         train_acc = 0.

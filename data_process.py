@@ -71,7 +71,7 @@ def test_read(images_list,labels_list):
     image = read_image(item[0])
     mask = read_image(item[1])
     cv.imshow("image", image)
-    cv.imshow("mask", mask)
+    # cv.imshow("mask", mask)
     cv.waitKey(0)
     cv.destroyAllWindows()
 

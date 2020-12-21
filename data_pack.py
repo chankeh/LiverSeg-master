@@ -38,9 +38,12 @@ class MyDataset(Dataset):
 
         def read_image(x):
             img_arr = np.array(Image.open(x).convert('L'), 'f')
-            img_arr = img_arr.reshape([512,512,1])
-            if len(img_arr.shape) == 2:  # grayscale
-                img_arr = np.tile(img_arr, [512, 3, 1, 1]).transpose(2, 3, 0, 1)
+            img_arr = np.expand_dims(img_arr, 0)
+            img_arr = np.expand_dims(img_arr, 1)
+            # img_arr = img_arr.reshape([-1,1])
+
+            # if len(img_arr.shape) == 2:  # grayscale
+            #     img_arr = np.tile(img_arr, [512, 3, 1, 1]).transpose(2, 3, 0, 1)
             # img_arr = img_arr
             return img_arr
 
